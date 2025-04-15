@@ -1,0 +1,132 @@
+import numpy as np
+from itertools import permutations, combinations
+import math
+
+# Input: WCET and Deadlines
+WCET = np.array([2, 3, 2, 2, 2, 2, 3])
+Deadlines = np.array([10, 10, 20, 20, 40, 40, 80])
+print("Schedulability test")
+print(sum(WCET/Deadlines))
+ID = np.array([1, 2, 3, 4, 5, 6, 7])
+
+hyperperiod = np.lcm.reduce(Deadlines)
+print("Hyperperiod: ", hyperperiod)
+
+def RR(WCET, Deadlines, ID,hyperperiod):
+    idle_time = 0
+    time = 0
+    waiting_time = 0
+    nb_exe = np.array([0,0,0,0,0,0,0])
+    init = 0
+
+    while time <=hyperperiod :
+        waiting_time = time - nb_exe[init] * WCET[init]
+        idle_time += WCET[init]
+        time += WCET[init]
+        nb_exe[init] += 1
+        if time > nb_exe[init]*Deadlines[init] :
+            print("Deadline", nb_exe[init],"of job",ID[init],"missed : Time ", time, " exceeds ",nb_exe[init]*Deadlines[init])
+            break
+        if init<6 : init += 1 
+        else : init = 0
+    return idle_time, time, waiting_time
+
+print("Round robin test")
+idle_time, time, waiting_time = RR(WCET, Deadlines, ID,hyperperiod)
+
+# Input: WCET and Deadlines
+WCET = np.array([2, 3, 2])
+Deadlines = np.array([10, 10, 20])
+ID = np.array([1, 2, 3])
+
+hyperperiod = np.lcm.reduce(Deadlines)
+print("Hyperperiod: ", hyperperiod)
+print("Schedulability test")
+print(sum(WCET/Deadlines))
+
+number_jobs = hyperperiod/Deadlines
+
+PAIRS = []
+for_perm = []
+for i in range(len(number_jobs)) :
+    #print("Permutation ",i) 
+    job = number_jobs[i]
+    listeee = []
+    for j in range(int(job)):
+        listeee.append([i+1,j+1])
+        for_perm.append([i+1,j+1])
+        #print("Job ",i+1," Instance ",j+1)
+    PAIRS.append(listeee)
+print(for_perm)
+
+PERM = []
+i = 0
+for perm in (permutations(for_perm,len(for_perm))):
+    #print("Permutation ",i)
+    err = 0
+    for n in range(len(perm)):
+        #print(perm[n])
+        to_test = perm[n+1:]
+        for val_test in to_test:
+            if (val_test[0] == perm[n][0]) & (val_test[1] < perm[n][1]) :
+                err += 1
+        #print(err)
+    if err == 0:
+        #print("permutation ok")
+        #print(perm)
+        PERM.append(perm)
+    i += 1
+#print(PERM)
+print(len(PERM),"permutations are possible in terms of job order")
+
+min_wait = 200000
+MIN = []
+PERM_fin = []
+for perm in PERM :  
+    ordre = []
+    time = 0
+    waiting_time = 0
+    idle_time = 0
+    nb_exe = np.array([0]*len(number_jobs))
+    err = 0
+    for n in range(len(perm)):
+        ordre.append(perm[n][0])
+        ind = perm[n][0]-1
+        waiting_time = time - nb_exe[ind] * WCET[ind]
+        idle_time += WCET[ind]
+        time += WCET[ind]
+        nb_exe[ind] += 1
+        if time > nb_exe[ind]*Deadlines[ind] :
+            print("Deadline", nb_exe[ind],"of job",ID[ind],"missed : Time ", time, " exceeds ",nb_exe[ind]*Deadlines[ind])
+            err += 1
+            break
+    if err == 0: 
+        if waiting_time < min_wait:
+            min_wait = waiting_time
+        PERM_fin.append(perm)
+    
+print("Number of permutations that respect the deadlines: ", len(PERM_fin))
+
+print("Minimum waiting time: ", min_wait)
+PERM_opti = []
+for perm in PERM_fin : 
+    ordre = []
+    time = 0
+    waiting_time = 0
+    idle_time = 0
+    nb_exe = np.array([0]*len(number_jobs))
+    err = 0
+    for n in range(len(perm)):
+        ordre.append(perm[n][0])
+        ind = perm[n][0]-1
+        waiting_time = time - nb_exe[ind] * WCET[ind]
+        idle_time += WCET[ind]
+        time += WCET[ind]
+        nb_exe[ind] += 1
+    if waiting_time == min_wait:
+        PERM_opti.append(perm)
+
+test = ([1, 1], [1, 2], [2, 1], [3, 1], [2, 2])    
+print(test in PERM_opti)
+
+print("Number of permutations that respect the deadlines: ", len(PERM_opti))      
